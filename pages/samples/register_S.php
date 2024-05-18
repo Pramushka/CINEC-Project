@@ -159,7 +159,7 @@ if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['e
                                     <button type="submit" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn">SIGN UP</button>
                                 </div>
                                 <div class="text-center mt-4 font-weight-light">
-                                    Already have an account? <a href="login.php" class="text-primary">Login</a>
+                                    Already have an account? <a href="login_S.php" class="text-primary">Login</a>
                                 </div>
                             </form>
                         </div>
