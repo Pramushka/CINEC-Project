@@ -33,7 +33,6 @@ if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['e
     $stmt->close();
     $conn->close();
 } else {
-    echo "All form fields are required.";
 }
 ?>
 
@@ -45,7 +44,7 @@ if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['e
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Majestic Admin</title>
+    <title>Marks-Manger Student Registration Form</title>
     <!-- plugins:css -->
     <link rel="stylesheet" href="../../vendors/mdi/css/materialdesignicons.min.css">
     <link rel="stylesheet" href="../../vendors/base/vendor.bundle.base.css">
@@ -65,7 +64,6 @@ if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['e
                     <div class="col-lg-6 d-flex align-items-center justify-content-center">
                         <div class="auth-form-transparent text-left p-3">
                             <div class="brand-logo">
-                                <img src="../../images/logo.svg" alt="logo">
                             </div>
                             <h4>New here?</h4>
                             <h6 class="font-weight-light">Join us today! It takes only a few steps</h6>
@@ -165,7 +163,6 @@ if (isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['e
                         </div>
                     </div>
                     <div class="col-lg-6 register-half-bg d-flex flex-row">
-                        <p class="text-white font-weight-medium text-center flex-grow align-self-end">Copyright &copy; 2018  All rights reserved.</p>
                     </div>
                 </div>
             </div>

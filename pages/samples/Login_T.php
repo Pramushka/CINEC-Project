@@ -1,4 +1,7 @@
 <?php
+// Start the session
+session_start();
+
 // Include the database helper file
 require_once '../../db.helper.php';
 
@@ -22,6 +25,11 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
 
         // Verify the password
         if (password_verify($password, $hashed_password)) {
+            // Store user's name in session variables
+            $_SESSION['first_name'] = $row['FIRST_NAME'];
+            $_SESSION['last_name'] = $row['LAST_NAME'];
+            $_SESSION['logged_in'] = true;
+            
             echo "Login successful!";
             // Redirect to the index page
             header("Location: ../../T_dashboard.php");
@@ -36,11 +44,8 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
     // Close the statement and connection
     $stmt->close();
     $conn->close();
-} else {
 }
 ?>
-
-
 
 
 
@@ -51,7 +56,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Majestic Admin</title>
+  <title>Marks-Manager Teachers Login</title>
   <!-- plugins:css -->
   <link rel="stylesheet" href="../../vendors/mdi/css/materialdesignicons.min.css">
   <link rel="stylesheet" href="../../vendors/base/vendor.bundle.base.css">
@@ -72,7 +77,6 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
           <div class="col-lg-6 d-flex align-items-center justify-content-center">
             <div class="auth-form-transparent text-left p-3">
               <div class="brand-logo">
-                <img src="../../images/logo.svg" alt="logo">
               </div>
               <h4>Welcome back!</h4>
                 <h6 class="font-weight-light">Happy to see you again!</h6>
@@ -111,14 +115,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
                     <div class="my-3">
                         <button type="submit" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn">LOGIN</button>
                     </div>
-                    <div class="mb-2 d-flex">
-                        <button type="button" class="btn btn-facebook auth-form-btn flex-grow mr-1">
-                            <i class="mdi mdi-facebook mr-2"></i>Facebook
-                        </button>
-                        <button type="button" class="btn btn-google auth-form-btn flex-grow ml-1">
-                            <i class="mdi mdi-google mr-2"></i>Google
-                        </button>
-                    </div>
+                    
                     <div class="text-center mt-4 font-weight-light">
                         Don't have an account? <a href="register_T.php" class="text-primary">Create</a>
                     </div>
@@ -126,7 +123,6 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
             </div>
           </div>
           <div class="col-lg-6 login-half-bg d-flex flex-row">
-            <p class="text-white font-weight-medium text-center flex-grow align-self-end">Copyright &copy; 2018  All rights reserved.</p>
           </div>
         </div>
       </div>
