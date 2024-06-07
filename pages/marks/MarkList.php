@@ -1,3 +1,32 @@
+<?php
+// Start the session
+session_start();
+
+// Include the database helper file
+require_once '../../db.helper.php';
+
+// Get the logged-in teacher's ID
+$teacherId = $_SESSION['teacher_id'];
+
+// Fetch marks data for the logged-in teacher
+$marksSql = "SELECT 
+                s.FIRST_NAME, s.LAST_NAME, 
+                b.BATCH_NO, 
+                m.NAME as MODULE_NAME, 
+                mk.MARKS, mk.UPDATE_ON 
+            FROM markes mk
+            JOIN student_table s ON mk.STUDENT_TABLE_ID = s.ID
+            JOIN batch b ON s.BATCH_ID = b.ID
+            JOIN module m ON mk.MODULE_ID = m.ID
+            WHERE mk.TEACHER_ID = ?";
+$stmt = $conn->prepare($marksSql);
+$stmt->bind_param("i", $teacherId);
+$stmt->execute();
+$result = $stmt->get_result();
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -211,6 +240,25 @@
                             <th>Updated On</th>
                         </tr>
                       </thead>
+                      <tbody>
+                    <?php
+                    if ($result->num_rows > 0) {
+                        while($row = $result->fetch_assoc()) {
+                            echo '<tr>';
+                            echo '<td>' . $row['FIRST_NAME'] . ' ' . $row['LAST_NAME'] . '</td>';
+                            echo '<td>' . $row['BATCH_NO'] . '</td>';
+                            echo '<td>' . $row['MODULE_NAME'] . '</td>';
+                            echo '<td>' . $row['MARKS'] . '</td>';
+                            echo '<td>' . $row['UPDATE_ON'] . '</td>';
+                            echo '</tr>';
+                        }
+                    } else {
+                        echo '<tr><td colspan="5">No marks found for the logged-in teacher.</td></tr>';
+                    }
+                    $stmt->close();
+                    $conn->close();
+                    ?>
+                </tbody>
                     </table>
                   </div>
                 </div>

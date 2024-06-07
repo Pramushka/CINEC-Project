@@ -1,3 +1,108 @@
+<?php
+// Start the session
+session_start();
+
+// Include the database helper file
+require_once '../../db.helper.php';
+
+// Fetch batch data
+$batchSql = "SELECT ID, BATCH_NO FROM batch";
+$batchResult = $conn->query($batchSql);
+
+// Fetch student data
+$studentSql = "SELECT ID, FIRST_NAME, LAST_NAME FROM student_table";
+$studentResult = $conn->query($studentSql);
+
+// Fetch module data
+$moduleSql = "SELECT ID, NAME FROM module";
+$moduleResult = $conn->query($moduleSql);
+
+// Check if form is submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $batchId = $_POST['batchNo'];
+    $studentId = $_POST['studentName'];
+    $moduleId = $_POST['module'];
+    $marks = $_POST['marks'];
+    $teacherId = $_SESSION['teacher_id']; // Assuming teacher_id is stored in session upon login
+    $updateBy = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
+    $updateOn = date('Y-m-d');
+
+    // Get the batch ID of the student
+    $studentBatchSql = "SELECT BATCH_ID FROM student_table WHERE ID = ?";
+    $studentBatchStmt = $conn->prepare($studentBatchSql);
+    $studentBatchStmt->bind_param("i", $studentId);
+    $studentBatchStmt->execute();
+    $studentBatchResult = $studentBatchStmt->get_result();
+
+    if ($studentBatchResult->num_rows > 0) {
+        $studentBatchRow = $studentBatchResult->fetch_assoc();
+        $batchId = $studentBatchRow['BATCH_ID'];
+    } else {
+        echo "<script>
+                alert('Invalid student selected.');
+                window.history.back();
+              </script>";
+        exit();
+    }
+
+    // Check if a record with the same studentId, moduleId, and batchId already exists
+    $checkSql = "SELECT ID FROM markes WHERE STUDENT_TABLE_ID = ? AND MODULE_ID = ?";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->bind_param("ii", $studentId, $moduleId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+
+    if ($checkResult->num_rows > 0) {
+        // Record exists, update it
+        $row = $checkResult->fetch_assoc();
+        $markId = $row['ID'];
+
+        $updateSql = "UPDATE markes SET MARKS = ?, UPDATE_ON = ?, UPDATE_BY = ?, TEACHER_ID = ? WHERE ID = ?";
+        $updateStmt = $conn->prepare($updateSql);
+        $updateStmt->bind_param("dssii", $marks, $updateOn, $updateBy, $teacherId, $markId);
+
+        if ($updateStmt->execute()) {
+            echo "<script>
+                    alert('Marks updated successfully!');
+                    window.location.href = '../../T_dashboard.php';
+                  </script>";
+        } else {
+            echo "<script>
+                    alert('Error: " . $updateStmt->error . "');
+                    window.history.back();
+                  </script>";
+        }
+
+        $updateStmt->close();
+    } else {
+        // Record does not exist, insert a new one
+        $insertSql = "INSERT INTO markes (MARKS, UPDATE_ON, UPDATE_BY, MODULE_ID, STUDENT_TABLE_ID, TEACHER_ID) VALUES (?, ?, ?, ?, ?, ?)";
+        $insertStmt = $conn->prepare($insertSql);
+        $insertStmt->bind_param("dssiii", $marks, $updateOn, $updateBy, $moduleId, $studentId, $teacherId);
+
+        if ($insertStmt->execute()) {
+            echo "<script>
+                    alert('Marks added successfully!');
+                    window.location.href = '../../T_dashboard.php';
+                  </script>";
+        } else {
+            echo "<script>
+                    alert('Error: " . $insertStmt->error . "');
+                    window.history.back();
+                  </script>";
+        }
+
+        $insertStmt->close();
+    }
+
+    $checkStmt->close();
+    $conn->close();
+}
+?>
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -201,50 +306,58 @@
         <div class="content-wrapper">
         <div class="row">
     <div class="col-12 grid-margin stretch-card">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">Marks Adding Form</h4>
-                <p class="card-description">
-                    From this form is for the teacher to add marks for each student <br> when Adding marks please enter the numeric value
-                </p>
-                <form class="forms-sample">
-                    <div class="form-group">
-                        <label for="batchNo">Batch No</label>
-                        <select class="form-control" id="batchNo" name="batchNo">
-                            <!-- Add your options here -->
-                            <option value="Batch1">Batch 1</option>
-                            <option value="Batch2">Batch 2</option>
-                            <!-- More options as needed -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="studentName">Student Name</label>
-                        <select class="form-control" id="studentName" name="studentName">
-                            <!-- Add your options here -->
-                            <option value="Student1">Student 1</option>
-                            <option value="Student2">Student 2</option>
-                            <!-- More options as needed -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="module">Module</label>
-                        <select class="form-control" id="module" name="module">
-                            <!-- Add your options here -->
-                            <option value="Module1">Module 1</option>
-                            <option value="Module2">Module 2</option>
-                            <!-- More options as needed -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="marks">Marks</label>
-                        <input type="number" class="form-control" id="marks" name="marks" placeholder="Enter Marks" min="0" max="100" style="width: 150px; height: 40px; border-radius: 4px; border: 1px solid #ced4da;">
-                    </div>      
-                    <button type="submit" class="btn btn-primary mr-2">Submit</button>
-                    <button type="reset" class="btn btn-light">Cancel</button>
-                </form>
+    <div class="card">
+    <div class="card-body">
+        <h4 class="card-title">Marks Adding Form</h4>
+        <p class="card-description">
+            From this form is for the teacher to add marks for each student <br> when Adding marks please enter the numeric value
+        </p>
+        <form class="forms-sample" action="AddMarks.php" method="POST">
+            <div class="form-group">
+                <label for="batchNo">Batch No</label>
+                <select class="form-control" id="batchNo" name="batchNo">
+                    <?php
+                    if ($batchResult->num_rows > 0) {
+                        while($batchRow = $batchResult->fetch_assoc()) {
+                            echo '<option value="'.$batchRow['ID'].'">'.$batchRow['BATCH_NO'].'</option>';
+                        }
+                    }
+                    ?>
+                </select>
             </div>
-        </div>
-        </div>
+            <div class="form-group">
+                <label for="studentName">Student Name</label>
+                <select class="form-control" id="studentName" name="studentName">
+                    <?php
+                    if ($studentResult->num_rows > 0) {
+                        while($studentRow = $studentResult->fetch_assoc()) {
+                            echo '<option value="'.$studentRow['ID'].'">'.$studentRow['FIRST_NAME'].' '.$studentRow['LAST_NAME'].'</option>';
+                        }
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="module">Module</label>
+                <select class="form-control" id="module" name="module">
+                    <?php
+                    if ($moduleResult->num_rows > 0) {
+                        while($moduleRow = $moduleResult->fetch_assoc()) {
+                            echo '<option value="'.$moduleRow['ID'].'">'.$moduleRow['NAME'].'</option>';
+                        }
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="marks">Marks</label>
+                <input type="number" class="form-control" id="marks" name="marks" placeholder="Enter Marks" min="0" max="100" style="width: 150px; height: 40px; border-radius: 4px; border: 1px solid #ced4da;">
+            </div>      
+            <button type="submit" class="btn btn-primary mr-2">Submit</button>
+            <button type="reset" class="btn btn-light">Cancel</button>
+        </form>
+      </div>
+    </div>
 
         </div>
         </div>

@@ -28,6 +28,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
             // Store user's name in session variables
             $_SESSION['first_name'] = $row['FIRST_NAME'];
             $_SESSION['last_name'] = $row['LAST_NAME'];
+            $_SESSION['teacher_id'] = $row['ID']; 
             $_SESSION['logged_in'] = true;
             
             echo "Login successful!";
