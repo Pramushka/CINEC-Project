@@ -24,8 +24,13 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
 
         // Verify the password
         if (password_verify($password, $hashed_password)) {
-            echo "Login successful!";
-            // Redirect to the index page
+            // Store user's name and ID in session variables
+            $_SESSION['student_id'] = $row['ID'];
+            $_SESSION['first_name'] = $row['FIRST_NAME'];
+            $_SESSION['last_name'] = $row['LAST_NAME'];
+            $_SESSION['logged_in'] = true;
+            
+            // Redirect to the student dashboard
             header("Location: ../../S_dashboard.php");
             exit();
         } else {
@@ -39,6 +44,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
     $stmt->close();
     $conn->close();
 } else {
+    echo "Please provide email and password.";
 }
 ?>
 
@@ -101,13 +107,7 @@ if (isset($_POST['email']) && isset($_POST['password'])) {
                         </div>
                     </div>
                     <div class="my-2 d-flex justify-content-between align-items-center">
-                        <div class="form-check">
-                            <label class="form-check-label text-muted">
-                                <input type="checkbox" class="form-check-input">
-                                Keep me signed in
-                            </label>
-                        </div>
-                        <a href="#" class="auth-link text-black">Forgot password?</a>
+                        
                     </div>
                     <div class="my-3">
                         <button type="submit" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn">LOGIN</button>

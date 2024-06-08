@@ -271,7 +271,7 @@ if ($announcementResult && $announcementResult->num_rows > 0) {
                 <i class="mdi mdi-settings text-primary"></i>
                 Settings
               </a>
-              <a class="dropdown-item">
+              <a class="dropdown-item" href="logout_T.php">
                 <i class="mdi mdi-logout text-primary"></i>
                 Logout
               </a>

@@ -1,8 +1,74 @@
 <?php
-// Start the session
 session_start();
-?>
 
+// Check if the user is logged in
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header("Location: ../../Login_S.php");
+    exit();
+}
+
+// Get the student ID from the session
+$student_id = $_SESSION['student_id'];
+
+// Include the database helper file
+require_once 'db.helper.php';
+
+// Fetch the marks for the logged-in student
+$studentMarksSql = "SELECT MODULE_ID, MARKS FROM markes WHERE STUDENT_TABLE_ID = ?";
+$studentMarksStmt = $conn->prepare($studentMarksSql);
+$studentMarksStmt->bind_param("i", $student_id);
+$studentMarksStmt->execute();
+$studentMarksResult = $studentMarksStmt->get_result();
+
+$studentMarks = [];
+while ($row = $studentMarksResult->fetch_assoc()) {
+    $studentMarks[$row['MODULE_ID']] = $row['MARKS'];
+}
+
+// Fetch the average marks for each module the student has marks in
+$moduleIds = implode(',', array_keys($studentMarks));
+$averageMarksSql = "SELECT MODULE_ID, AVG(MARKS) as AVG_MARKS FROM markes WHERE MODULE_ID IN ($moduleIds) GROUP BY MODULE_ID";
+$averageMarksResult = $conn->query($averageMarksSql);
+
+$averageMarks = [];
+while ($row = $averageMarksResult->fetch_assoc()) {
+    $averageMarks[$row['MODULE_ID']] = $row['AVG_MARKS'];
+}
+
+// Prepare data for the chart
+$modules = array_keys($studentMarks);
+$studentMarksData = array_values($studentMarks);
+$averageMarksData = array_values($averageMarks);
+
+// Fetch the recent marks received by the logged-in student
+$recentMarksSql = "
+    SELECT 
+        m.NAME as MODULE_NAME, 
+        b.BATCH_NO, 
+        mk.MARKS, 
+        mk.UPDATE_ON, 
+        mk.UPDATE_BY 
+    FROM markes mk
+    JOIN module m ON mk.MODULE_ID = m.ID
+    JOIN student_table s ON mk.STUDENT_TABLE_ID = s.ID
+    JOIN batch b ON s.BATCH_ID = b.ID
+    WHERE mk.STUDENT_TABLE_ID = ?
+    ORDER BY mk.UPDATE_ON DESC
+    LIMIT 5";
+$recentMarksStmt = $conn->prepare($recentMarksSql);
+$recentMarksStmt->bind_param("i", $student_id);
+$recentMarksStmt->execute();
+$recentMarksResult = $recentMarksStmt->get_result();
+
+$recentMarks = [];
+while ($row = $recentMarksResult->fetch_assoc()) {
+    $recentMarks[] = $row;
+}
+
+$recentMarksStmt->close();
+$studentMarksStmt->close();
+$conn->close();
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -141,7 +207,7 @@ session_start();
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="profileDropdown">
             <img src="images/usericon.png" alt="profile"/>
               <span class="nav-profile-name">
-                <?php
+              <?php
                         // Display the logged-in user's name
                         if (isset($_SESSION['first_name']) && isset($_SESSION['last_name'])) {
                             echo htmlspecialchars($_SESSION['first_name'] . ' ' . htmlspecialchars($_SESSION['last_name']));
@@ -156,7 +222,7 @@ session_start();
                 <i class="mdi mdi-settings text-primary"></i>
                 Settings
               </a>
-              <a class="dropdown-item" href="logout.php">
+              <a class="dropdown-item" href="logout_S.php">
                 <i class="mdi mdi-logout text-primary"></i>
                 Logout
               </a>
@@ -243,14 +309,14 @@ session_start();
             </div>
           <div class="row">
             <div class="col-md-7 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <p class="card-title">Marks Compared to Average</p>
-                  <p class="mb-4">In here a chart will be the avarage going thourgh on the batch and the users current state comparison</p>
-                  <div id="cash-deposits-chart-legend" class="d-flex justify-content-center pt-3"></div>
-                  <canvas id="#"></canvas>
-                </div>
-              </div>
+            <div class="card">
+    <div class="card-body">
+        <p class="card-title">Marks Compared to Average</p>
+        <p class="mb-4">In here a chart will be the average going through on the batch and the users current state comparison</p>
+        <div id="cash-deposits-chart-legend" class="d-flex justify-content-center pt-3"></div>
+        <canvas id="marksComparisonChart"></canvas>
+    </div>
+</div>
             </div>
             <div class="col-md-5 grid-margin stretch-card">
               <div class="card">
@@ -264,24 +330,35 @@ session_start();
           </div>
           <div class="row">
             <div class="col-md-12 stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <p class="card-title">Recent Marks Recived</p>
-                  <div class="table-responsive">
-                    <table id="recent-purchases-listing" class="table">
-                      <thead>
+            <div class="card">
+    <div class="card-body">
+        <p class="card-title">Recent Marks Received</p>
+        <div class="table-responsive">
+            <table id="recent-purchases-listing" class="table">
+                <thead>
+                    <tr>
+                        <th>Subject Name</th>
+                        <th>Batch</th>
+                        <th>Marks Provided</th>
+                        <th>Updated On</th>
+                        <th>Updated By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($recentMarks as $mark): ?>
                         <tr>
-                            <th>Subject Name</th>
-                            <th>Batch</th>
-                            <th>Marks Provided</th>
-                            <th>Updated On</th>
-                            <th>Updated By</th>
+                            <td><?php echo htmlspecialchars($mark['MODULE_NAME']); ?></td>
+                            <td><?php echo htmlspecialchars($mark['BATCH_NO']); ?></td>
+                            <td><?php echo htmlspecialchars($mark['MARKS']); ?></td>
+                            <td><?php echo htmlspecialchars($mark['UPDATE_ON']); ?></td>
+                            <td><?php echo htmlspecialchars($mark['UPDATE_BY']); ?></td>
                         </tr>
-                      </thead>
-                    </table>
-                  </div>
-                </div>
-              </div>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
             </div>
           </div>
         </div>
@@ -297,7 +374,46 @@ session_start();
     <!-- page-body-wrapper ends -->
   </div>
   <!-- container-scroller -->
-
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var ctx = document.getElementById('marksComparisonChart').getContext('2d');
+        var marksComparisonChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode($modules); ?>,
+                datasets: [
+                    {
+                        label: 'Your Marks',
+                        data: <?php echo json_encode($studentMarksData); ?>,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Batch Average Marks',
+                        data: <?php echo json_encode($averageMarksData); ?>,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
+            }
+        });
+    });
+</script>
   <!-- plugins:js -->
   <script src="vendors/base/vendor.bundle.base.js"></script>
   <!-- endinject -->
