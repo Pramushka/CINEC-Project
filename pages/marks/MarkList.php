@@ -24,8 +24,21 @@ $stmt->bind_param("i", $teacherId);
 $stmt->execute();
 $result = $stmt->get_result();
 
+function getGrade($marks) {
+    if ($marks >= 85) return 'A+';
+    if ($marks >= 80) return 'A';
+    if ($marks >= 75) return 'A-';
+    if ($marks >= 70) return 'B+';
+    if ($marks >= 65) return 'B';
+    if ($marks >= 60) return 'B-';
+    if ($marks >= 55) return 'C+';
+    if ($marks >= 50) return 'C';
+    if ($marks >= 45) return 'C-';
+    if ($marks >= 40) return 'D+';
+    if ($marks >= 35) return 'D';
+    return 'E';
+}
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -248,7 +261,7 @@ $result = $stmt->get_result();
                             echo '<td>' . $row['FIRST_NAME'] . ' ' . $row['LAST_NAME'] . '</td>';
                             echo '<td>' . $row['BATCH_NO'] . '</td>';
                             echo '<td>' . $row['MODULE_NAME'] . '</td>';
-                            echo '<td>' . $row['MARKS'] . '</td>';
+                            echo '<td>' . getGrade($row['MARKS']) . '</td>';
                             echo '<td>' . $row['UPDATE_ON'] . '</td>';
                             echo '</tr>';
                         }
